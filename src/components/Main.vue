@@ -20,7 +20,7 @@
     />
     <label for="nme"><span>URL</span></label>
   </form>
-  <input type="button" @click=" wsConnect" class="regbutton" value="submit" />
+  <input type="button" @click="wsConnect" class="regbutton" value="submit" />
   <hr class="style1" />
   <div id="recieved">
     <div>Your link: {{ your_link }}</div>
@@ -31,31 +31,27 @@
         {{ link }}
       </li>
     </ol>
-    <div>Links tree:
-    <TreeBrowser
-    :str="strs"
-    />
+    <div>
+      Links tree:
+      <TreeBrowser :str="strs" />
     </div>
-    <div v-if="showload"> Finding ... 
-         <ol v-if="!closed">
-      <li v-for="link in wslinks" :key="link">
-        {{ link }}
-      </li>
-    </ol>
-      
+    <div v-if="showload">
+      Finding ...
+      <ol v-if="!closed">
+        <li v-for="link in wslinks.slice().reverse()" :key="link">
+          {{ link }}
+        </li>
+      </ol>
     </div>
   </div>
-
 </template>
 
 <script>
-
-import axios from "axios";
-import TreeBrowser from './TreeBrowser.vue'
+import TreeBrowser from "./TreeBrowser.vue";
 export default {
   name: "Main",
-  components:{
-    TreeBrowser
+  components: {
+    TreeBrowser,
   },
   data() {
     return {
@@ -65,15 +61,15 @@ export default {
       all_unique_links: [],
       strs: [],
       closed: false,
-      showload:false,
-      wslinks:[""],
+      showload: false,
+      wslinks: [],
       connection: null,
     };
   },
 
-  methods: { 
-    addrow(data){
-      this.wslinks.push(data)
+  methods: {
+    addrow(data) {
+      this.wslinks.push(data);
     },
     showlist() {
       if (this.closed == true) {
@@ -82,43 +78,31 @@ export default {
         this.closed = true;
       }
     },
-    wsConnect(){
-      console.log("starting ws")
-      this.showload = true
-      this.connection = new WebSocket ("ws://localhost:7777/link")
+    wsConnect() {
+      console.log("starting ws");
+      this.showload = true;
+      this.connection = new WebSocket("wss://links-references.herokuapp.com/link");
       this.connection.onopen = () => this.connection.send(this.url);
 
-       this.connection.onmessage=(event) => {
-        console.log("Event is ",event)
+      this.connection.onmessage = (event) => {
+        console.log("Event is ", event);
         this.addrow(event.data);
-      }
-      this.connection.onclose = function(event){
-        console.log("closing ws connection ",event)
-      }
-    },
-   
-    async Send() {
-      var url = { url: this.url };
-      var response = await axios
-        .post(process.env.VUE_APP_ROOT_API, url, {
-          withCredentials: true,
-        })
-        .then((response) => (this.recieved = response))
-        .catch((error) => (this.responsecode = error.response.status));
-      console.log(response);
+        try {
+          var str = JSON.parse(event.data);
+          console.log("str is", str.unique_refs);
+          this.your_link = str.link;
+          this.number_of_unique_refs = str.number_of_unique_refs;
+          this.all_unique_links = str.unique_refs;
+          this.strs = str.references;
+        } catch (e) {
+          console.log("Event is ", event);
+          this.addrow(event.data);
+        }
+      };
 
-      console.log(url);
-      console.log(process.env.VUE_APP_ROOT_API);
-
-      if (response.status == 200) {
-        this.your_link = response.data.link;
-        this.number_of_unique_refs = response.data.number_of_unique_refs;
-        this.all_unique_links = response.data.unique_refs;
-        this.strs = response.data.references;
-        console.log( this.strs );
-      } else {
-        this.all_unique_links = ["something went wrong, or URL is invalid"];
-      }
+      this.connection.onclose = function (event) {
+        console.log("closing ws connection ", event);
+      };
     },
   },
 };
