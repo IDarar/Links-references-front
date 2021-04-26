@@ -1,7 +1,7 @@
 <template>
   <div>
     <div 
-    :style="{'margin-left': `${depth*20}px`}"
+    :style="{'margin-left': `${depth*50}px`}"
     class="str">
     <div class="linktree">{{ str.link }}</div>
   </div>

@@ -20,7 +20,7 @@
     />
     <label for="nme"><span>URL</span></label>
   </form>
-  <input type="button" @click="Send" class="regbutton" value="submit" />
+  <input type="button" @click=" wsConnect" class="regbutton" value="submit" />
   <hr class="style1" />
   <div id="recieved">
     <div>Your link: {{ your_link }}</div>
@@ -35,6 +35,14 @@
     <TreeBrowser
     :str="strs"
     />
+    </div>
+    <div v-if="showload"> Finding ... 
+         <ol v-if="!closed">
+      <li v-for="link in wslinks" :key="link">
+        {{ link }}
+      </li>
+    </ol>
+      
     </div>
   </div>
 
@@ -57,10 +65,16 @@ export default {
       all_unique_links: [],
       strs: [],
       closed: false,
+      showload:false,
+      wslinks:[""],
+      connection: null,
     };
   },
 
-  methods: {
+  methods: { 
+    addrow(data){
+      this.wslinks.push(data)
+    },
     showlist() {
       if (this.closed == true) {
         this.closed = false;
@@ -68,6 +82,21 @@ export default {
         this.closed = true;
       }
     },
+    wsConnect(){
+      console.log("starting ws")
+      this.showload = true
+      this.connection = new WebSocket ("ws://localhost:7777/link")
+      this.connection.onopen = () => this.connection.send(this.url);
+
+       this.connection.onmessage=(event) => {
+        console.log("Event is ",event)
+        this.addrow(event.data);
+      }
+      this.connection.onclose = function(event){
+        console.log("closing ws connection ",event)
+      }
+    },
+   
     async Send() {
       var url = { url: this.url };
       var response = await axios
