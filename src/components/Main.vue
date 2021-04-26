@@ -81,7 +81,7 @@ export default {
     wsConnect() {
       console.log("starting ws");
       this.showload = true;
-      this.connection = new WebSocket("wss://links-references.herokuapp.com/link/");
+      this.connection = new WebSocket("https://links-references.herokuapp.com/link/");
       this.connection.onopen = () => this.connection.send(this.url);
 
       this.connection.onmessage = (event) => {
